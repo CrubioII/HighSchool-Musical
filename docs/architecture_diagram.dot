@@ -1,0 +1,15 @@
+digraph architecture {
+  rankdir=LR;
+  node [shape=rect style=filled fillcolor="#E5F5FD" fontname=Helvetica];
+
+  frontend [label="Frontend (React)\nComponentes UI, Auth, Dashboards"];
+  api [label="Backend API (Node.js/Express)\nAutenticación, Lógica de Negocio"];
+  postgres [label="PostgreSQL\nDatos institucionales y estadísticas"];
+  mongodb [label="MongoDB\nRutinas, Ejercicios, Progreso"];
+
+  frontend -> api [label="HTTP/HTTPS" color=blue fontcolor=blue];
+  api -> postgres [label="Consultas SQL" color=darkgreen fontcolor=darkgreen];
+  api -> mongodb [label="Consultas Mongo (Mongoose)" color=darkorange fontcolor=darkorange];
+  postgres -> api [label="Datos institucionales" color=darkgreen fontcolor=darkgreen];
+  mongodb -> api [label="Datos flexibles" color=darkorange fontcolor=darkorange];
+}
