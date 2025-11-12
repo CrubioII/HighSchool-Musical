@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useApi } from '../api.js';
+import { IconEdit, IconPlus, IconRefresh, IconTrash } from '../components/icons.jsx';
 
-/**
- * ExercisesPage displays a list of exercises stored in MongoDB. Trainers
- * and administrators can create new exercises and edit or delete existing
- * ones. Students and collaborators have read‑only access.
- */
 export default function ExercisesPage() {
   const api = useApi();
   const { role } = useAuth();
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  // Form state for creating/updating exercises
   const [form, setForm] = useState({
     id: null,
     name: '',
@@ -25,7 +20,6 @@ export default function ExercisesPage() {
   });
   const [isEditing, setIsEditing] = useState(false);
 
-  // Load exercises on mount
   useEffect(() => {
     const fetchExercises = async () => {
       try {
@@ -40,7 +34,6 @@ export default function ExercisesPage() {
       }
     };
     fetchExercises();
-    // adding api to deps will reattach interceptors continuously; avoid
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -77,13 +70,10 @@ export default function ExercisesPage() {
           .filter((v) => v.length > 0),
       };
       if (isEditing && form.id) {
-        // Update existing
         await api.put(`/api/exercises/${form.id}`, payload);
       } else {
-        // Create new
         await api.post('/api/exercises', payload);
       }
-      // Refresh list and reset form
       const res = await api.get('/api/exercises');
       setExercises(res.data);
       resetForm();
@@ -117,104 +107,158 @@ export default function ExercisesPage() {
   };
 
   return (
-    <div>
-      <h3>Ejercicios</h3>
-      {loading ? (
-        <p>Cargando...</p>
-      ) : (
-        <div>
-          {error && <p className="error">{error}</p>}
-          {/* List of exercises */}
-          <table className="exercise-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                <th>Dificultad</th>
-                <th>Duración (min)</th>
-                <th>Videos</th>
-                {['trainer', 'admin'].includes(role) && <th>Acciones</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {exercises.map((ex) => (
-                <tr key={ex._id}>
-                  <td>{ex.name}</td>
-                  <td>{ex.type}</td>
-                  <td>{ex.difficulty}</td>
-                  <td>{ex.duration}</td>
-                  <td>{(ex.videos || []).length}</td>
-                  {['trainer', 'admin'].includes(role) && (
-                    <td>
-                      <button onClick={() => handleEdit(ex)}>Editar</button>{' '}
-                      <button onClick={() => handleDelete(ex._id)}>Eliminar</button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {/* Form to create or edit exercise (only for trainer/admin) */}
-          {['trainer', 'admin'].includes(role) && (
-            <div className="exercise-form">
-              <h4>{isEditing ? 'Editar ejercicio' : 'Crear ejercicio'}</h4>
-              <form onSubmit={handleSubmit}>
-                <div>
-                  <label>Nombre</label>
-                  <input
-                    name="name"
-                    type="text"
-                    value={form.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <label>Tipo</label>
-                  <select name="type" value={form.type} onChange={handleChange}>
-                    <option value="cardio">Cardio</option>
-                    <option value="fuerza">Fuerza</option>
-                    <option value="movilidad">Movilidad</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Dificultad</label>
-                  <select name="difficulty" value={form.difficulty} onChange={handleChange}>
-                    <option value="principiante">Principiante</option>
-                    <option value="intermedio">Intermedio</option>
-                    <option value="avanzado">Avanzado</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Duración (minutos)</label>
-                  <input
-                    name="duration"
-                    type="number"
-                    min="1"
-                    value={form.duration}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <label>Descripción</label>
-                  <textarea
-                    name="description"
-                    value={form.description}
-                    onChange={handleChange}
-                    rows="3"
-                  />
-                </div>
-                <div>
-                  <label>Videos (URL separadas por coma)</label>
-                  <input name="videos" type="text" value={form.videos} onChange={handleChange} />
-                </div>
-                <button type="submit">{isEditing ? 'Actualizar' : 'Crear'}</button>
-                {isEditing && <button type="button" onClick={resetForm}>Cancelar</button>}
-              </form>
-            </div>
-          )}
+    <div className="page-stack">
+      <section className="page-section">
+        <div className="section-heading">
+          <div>
+            <h3>Biblioteca de ejercicios</h3>
+            <p>Consulta los ejercicios disponibles y su nivel de dificultad.</p>
+          </div>
+          <button className="btn btn-secondary" type="button" onClick={() => resetForm()}>
+            <IconRefresh size={18} /> Limpiar formulario
+          </button>
         </div>
+        {loading ? (
+          <div className="empty-state">Cargando ejercicios...</div>
+        ) : (
+          <>
+            {error && <div className="alert alert-error">{error}</div>}
+            {exercises.length === 0 ? (
+              <div className="empty-state">No hay ejercicios registrados aún.</div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Tipo</th>
+                      <th>Dificultad</th>
+                      <th>Duración (min)</th>
+                      <th>Videos</th>
+                      {['trainer', 'admin'].includes(role) && <th>Acciones</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exercises.map((ex) => (
+                      <tr key={ex._id}>
+                        <td>{ex.name}</td>
+                        <td>{ex.type}</td>
+                        <td>{ex.difficulty}</td>
+                        <td>{ex.duration}</td>
+                        <td>
+                          <span className="badge">{(ex.videos || []).length} recursos</span>
+                        </td>
+                        {['trainer', 'admin'].includes(role) && (
+                          <td>
+                            <div className="pill-list">
+                              <button className="btn btn-secondary" type="button" onClick={() => handleEdit(ex)}>
+                                <IconEdit size={18} /> Editar
+                              </button>
+                              <button className="btn btn-danger" type="button" onClick={() => handleDelete(ex._id)}>
+                                <IconTrash size={18} /> Eliminar
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      {['trainer', 'admin'].includes(role) && (
+        <section className="page-section">
+          <div className="section-heading">
+            <h3>{isEditing ? 'Editar ejercicio' : 'Crear nuevo ejercicio'}</h3>
+            {!isEditing && (
+              <span className="badge">Aporta variedad a tus rutinas</span>
+            )}
+          </div>
+          <form onSubmit={handleSubmit} className="form-grid">
+            <div className="form-grid-two">
+              <div>
+                <label htmlFor="exercise-name">Nombre</label>
+                <input
+                  id="exercise-name"
+                  name="name"
+                  type="text"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="exercise-type">Tipo</label>
+                <select id="exercise-type" name="type" value={form.type} onChange={handleChange}>
+                  <option value="cardio">Cardio</option>
+                  <option value="fuerza">Fuerza</option>
+                  <option value="movilidad">Movilidad</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-grid-two">
+              <div>
+                <label htmlFor="exercise-difficulty">Dificultad</label>
+                <select
+                  id="exercise-difficulty"
+                  name="difficulty"
+                  value={form.difficulty}
+                  onChange={handleChange}
+                >
+                  <option value="principiante">Principiante</option>
+                  <option value="intermedio">Intermedio</option>
+                  <option value="avanzado">Avanzado</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="exercise-duration">Duración (minutos)</label>
+                <input
+                  id="exercise-duration"
+                  name="duration"
+                  type="number"
+                  min="1"
+                  value={form.duration}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="exercise-description">Descripción</label>
+              <textarea
+                id="exercise-description"
+                name="description"
+                rows="3"
+                value={form.description}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="exercise-videos">Videos (URL separadas por coma)</label>
+              <input
+                id="exercise-videos"
+                name="videos"
+                type="text"
+                value={form.videos}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="pill-list">
+              <button className="btn btn-primary" type="submit">
+                <IconPlus size={18} /> {isEditing ? 'Actualizar ejercicio' : 'Crear ejercicio'}
+              </button>
+              {isEditing && (
+                <button className="btn btn-neutral" type="button" onClick={resetForm}>
+                  Cancelar edición
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
       )}
     </div>
   );
