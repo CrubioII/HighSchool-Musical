@@ -53,7 +53,7 @@ async function start() {
     console.error('Error al conectar a PostgreSQL', err);
     process.exit(1);
   }
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 8080 ;
   app.listen(port, () => {
     console.log(`Servidor escuchando en el puerto ${port}`);
   });
