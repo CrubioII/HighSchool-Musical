@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { useApi } from '../api.js';
+import { IconUserCheck } from '../components/icons.jsx';
 
-/**
- * AdminPanel provides a simple interface for the well‑being chief (admin) to
- * assign or reassign a trainer to a user. It posts to the backend
- * /api/admin/assign endpoint with the selected user and instructor IDs.
- */
 export default function AdminPanel() {
   const api = useApi();
   const [userId, setUserId] = useState('');
@@ -31,31 +27,47 @@ export default function AdminPanel() {
   };
 
   return (
-    <div>
-      <h3>Asignar entrenador a usuario</h3>
-      {message && <p className="success">{message}</p>}
-      {error && <p className="error">{error}</p>}
-      <form onSubmit={handleSubmit} className="admin-form">
+    <section className="page-section">
+      <div className="section-heading">
         <div>
-          <label>ID del usuario</label>
-          <input
-            type="number"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            required
-          />
+          <h3>Asignar entrenador a usuario</h3>
+          <p>Coordina el acompañamiento seleccionando la dupla ideal entre entrenadores y estudiantes.</p>
         </div>
-        <div>
-          <label>ID del instructor</label>
-          <input
-            type="number"
-            value={instructorId}
-            onChange={(e) => setInstructorId(e.target.value)}
-            required
-          />
+        <span className="badge">
+          <IconUserCheck size={18} /> Administrador
+        </span>
+      </div>
+      {message && <div className="alert alert-success">{message}</div>}
+      {error && <div className="alert alert-error">{error}</div>}
+      <form onSubmit={handleSubmit} className="form-grid">
+        <div className="form-grid-two">
+          <div>
+            <label htmlFor="admin-user">ID del usuario</label>
+            <input
+              id="admin-user"
+              type="number"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              required
+              placeholder="Ejemplo: 102030"
+            />
+          </div>
+          <div>
+            <label htmlFor="admin-instructor">ID del instructor</label>
+            <input
+              id="admin-instructor"
+              type="number"
+              value={instructorId}
+              onChange={(e) => setInstructorId(e.target.value)}
+              required
+              placeholder="Ejemplo: 409876"
+            />
+          </div>
         </div>
-        <button type="submit">Asignar</button>
+        <button className="btn btn-primary" type="submit">
+          Confirmar asignación
+        </button>
       </form>
-    </div>
+    </section>
   );
 }

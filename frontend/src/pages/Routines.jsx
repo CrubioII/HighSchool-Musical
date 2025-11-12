@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useApi } from '../api.js';
+import { IconCalendarPlus, IconCheckCircle, IconPlus } from '../components/icons.jsx';
 
-/**
- * RoutinesPage allows users to view their routines and adopt predefined ones.
- * Trainers can create predefined routines and normal users can create their
- * own routines by selecting exercises and specifying parameters. This page
- * demonstrates basic CRUD operations and adoption logic.
- */
 export default function RoutinesPage() {
   const api = useApi();
   const { role } = useAuth();
@@ -15,16 +10,14 @@ export default function RoutinesPage() {
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  // Form state for creating new routine
   const [routineForm, setRoutineForm] = useState({
     name: '',
     description: '',
     isPredefined: false,
-    items: [], // list of { exerciseId, order, sets, reps, duration, rest }
+    items: [],
   });
   const [showCreate, setShowCreate] = useState(false);
 
-  // Load routines and exercises on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -51,7 +44,6 @@ export default function RoutinesPage() {
   };
 
   const handleAddItem = () => {
-    // When adding a new item, default exerciseId to empty string if there are no exercises
     setRoutineForm((prev) => ({
       ...prev,
       items: [
@@ -79,7 +71,6 @@ export default function RoutinesPage() {
   const handleCreateRoutine = async (e) => {
     e.preventDefault();
     try {
-      // Validate that all items have an exercise selected
       if (routineForm.items.some((it) => !it.exerciseId)) {
         setError('Todos los ejercicios deben seleccionarse');
         return;
@@ -117,143 +108,177 @@ export default function RoutinesPage() {
   };
 
   return (
-    <div>
-      <h3>Rutinas</h3>
-      {loading ? (
-        <p>Cargando...</p>
-      ) : (
-        <div>
-          {error && <p className="error">{error}</p>}
-          <button onClick={() => setShowCreate(!showCreate)}>
-            {showCreate ? 'Cancelar' : 'Crear nueva rutina'}
+    <div className="page-stack">
+      <section className="page-section">
+        <div className="section-heading">
+          <div>
+            <h3>Gestión de rutinas</h3>
+            <p>Crea planes personalizados y comparte rutinas prediseñadas.</p>
+          </div>
+          <button className="btn btn-primary" type="button" onClick={() => setShowCreate((prev) => !prev)}>
+            <IconCalendarPlus size={18} /> {showCreate ? 'Cerrar formulario' : 'Nueva rutina'}
           </button>
-          {showCreate && (
-            <div className="routine-form">
-              <h4>Nueva rutina</h4>
-              <form onSubmit={handleCreateRoutine}>
-                <div>
-                  <label>Nombre</label>
-                  <input
-                    type="text"
-                    value={routineForm.name}
-                    onChange={(e) => setRoutineForm({ ...routineForm, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label>Descripción</label>
-                  <textarea
-                    value={routineForm.description}
-                    onChange={(e) => setRoutineForm({ ...routineForm, description: e.target.value })}
-                  />
-                </div>
-                {/* Trainers can mark as predefined */}
-                {role === 'trainer' || role === 'admin' ? (
-                  <div>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={routineForm.isPredefined}
-                        onChange={(e) =>
-                          setRoutineForm({ ...routineForm, isPredefined: e.target.checked })
-                        }
-                      />
-                      Marcar como rutina prediseñada
-                    </label>
-                  </div>
-                ) : null}
-                <h5>Ejercicios</h5>
-                {routineForm.items.map((item, idx) => (
-                  <div key={idx} className="routine-item">
-                    <select
-                      value={item.exerciseId}
-                      onChange={(e) => handleItemChange(idx, 'exerciseId', e.target.value)}
-                    >
-                      {exercises.map((ex) => (
-                        <option key={ex._id} value={ex._id}>
-                          {ex.name}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="Orden"
-                      value={item.order}
-                      onChange={(e) => handleItemChange(idx, 'order', e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Sets"
-                      value={item.sets}
-                      onChange={(e) => handleItemChange(idx, 'sets', e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Reps"
-                      value={item.reps}
-                      onChange={(e) => handleItemChange(idx, 'reps', e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Duración (min)"
-                      value={item.duration}
-                      onChange={(e) => handleItemChange(idx, 'duration', e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Descanso (min)"
-                      value={item.rest}
-                      onChange={(e) => handleItemChange(idx, 'rest', e.target.value)}
-                    />
-                  </div>
-                ))}
-                <button type="button" onClick={handleAddItem}>
-                  Añadir ejercicio
-                </button>
-                <button type="submit">Guardar rutina</button>
-              </form>
-            </div>
-          )}
-          <h4>Listado de rutinas</h4>
-          {routines.length === 0 ? (
-            <p>No tienes rutinas creadas o disponibles.</p>
-          ) : (
-            <table className="routine-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Descripción</th>
-                  <th>Ejercicios</th>
-                  <th>Tipo</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {routines.map((rt) => (
-                  <tr key={rt._id}>
-                    <td>{rt.name}</td>
-                    <td>{rt.description}</td>
-                    <td>{(rt.exercises || []).length}</td>
-                    <td>{rt.isPredefined ? 'Prediseñada' : 'Personal'}</td>
-                    <td>
-                      {rt.isPredefined && role !== 'trainer' && role !== 'admin' ? (
-                        <button onClick={() => handleAdopt(rt._id)}>Adoptar</button>
-                      ) : (
-                        <span>-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
         </div>
-      )}
+        {loading ? (
+          <div className="empty-state">Cargando rutinas y ejercicios...</div>
+        ) : (
+          <>
+            {error && <div className="alert alert-error">{error}</div>}
+            {showCreate && (
+              <div className="page-section" style={{ marginBottom: '2rem', boxShadow: 'none' }}>
+                <h4 style={{ marginTop: 0 }}>Nueva rutina</h4>
+                <form onSubmit={handleCreateRoutine} className="form-grid">
+                  <div className="form-grid-two">
+                    <div>
+                      <label htmlFor="routine-name">Nombre</label>
+                      <input
+                        id="routine-name"
+                        type="text"
+                        value={routineForm.name}
+                        onChange={(e) => setRoutineForm({ ...routineForm, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="routine-type">Tipo</label>
+                      <div className="pill-list">
+                        <span className="badge">{routineForm.isPredefined ? 'Prediseñada' : 'Personal'}</span>
+                        {(role === 'trainer' || role === 'admin') && (
+                          <button
+                            className="btn btn-secondary"
+                            type="button"
+                            onClick={() =>
+                              setRoutineForm((prev) => ({ ...prev, isPredefined: !prev.isPredefined }))
+                            }
+                          >
+                            <IconCheckCircle size={18} /> Marcar como {routineForm.isPredefined ? 'personal' : 'prediseñada'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="routine-description">Descripción</label>
+                    <textarea
+                      id="routine-description"
+                      value={routineForm.description}
+                      onChange={(e) => setRoutineForm({ ...routineForm, description: e.target.value })}
+                    />
+                  </div>
+                  <h5>Ejercicios</h5>
+                  {routineForm.items.map((item, idx) => (
+                    <div key={idx} className="form-grid-two" style={{ alignItems: 'end' }}>
+                      <div>
+                        <label>Ejercicio</label>
+                        <select
+                          value={item.exerciseId}
+                          onChange={(e) => handleItemChange(idx, 'exerciseId', e.target.value)}
+                        >
+                          {exercises.map((ex) => (
+                            <option key={ex._id} value={ex._id}>
+                              {ex.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label>Orden</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.order}
+                          onChange={(e) => handleItemChange(idx, 'order', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label>Sets</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.sets}
+                          onChange={(e) => handleItemChange(idx, 'sets', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label>Repeticiones</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.reps}
+                          onChange={(e) => handleItemChange(idx, 'reps', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label>Duración (min)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.duration}
+                          onChange={(e) => handleItemChange(idx, 'duration', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label>Descanso (min)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.rest}
+                          onChange={(e) => handleItemChange(idx, 'rest', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button className="btn btn-secondary" type="button" onClick={handleAddItem}>
+                    <IconPlus size={18} /> Añadir ejercicio
+                  </button>
+                  <button className="btn btn-primary" type="submit">
+                    Guardar rutina
+                  </button>
+                </form>
+              </div>
+            )}
+            <h4 style={{ marginTop: showCreate ? '1rem' : 0 }}>Listado de rutinas</h4>
+            {routines.length === 0 ? (
+              <div className="empty-state">No tienes rutinas creadas o disponibles.</div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Descripción</th>
+                      <th>Ejercicios</th>
+                      <th>Tipo</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {routines.map((rt) => (
+                      <tr key={rt._id}>
+                        <td>{rt.name}</td>
+                        <td>{rt.description}</td>
+                        <td>{(rt.exercises || []).length}</td>
+                        <td>
+                          <span className="badge">{rt.isPredefined ? 'Prediseñada' : 'Personal'}</span>
+                        </td>
+                        <td>
+                          {rt.isPredefined && role !== 'trainer' && role !== 'admin' ? (
+                            <button className="btn btn-secondary" onClick={() => handleAdopt(rt._id)}>
+                              Adoptar
+                            </button>
+                          ) : (
+                            <span className="badge" style={{ background: 'rgba(15,23,42,0.08)' }}>Sin acciones</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </section>
     </div>
   );
 }

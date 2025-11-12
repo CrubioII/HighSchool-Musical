@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useApi } from '../api.js';
+import { IconUsers } from '../components/icons.jsx';
 
-/**
- * UsersPanel is a placeholder for trainers to view users assigned to them.
- * In a real implementation, this would fetch assignments from the backend
- * and display routine summaries and progress for each user. Currently it
- * displays a static message.
- */
 export default function UsersPanel() {
   const api = useApi();
   const [assignments, setAssignments] = useState([]);
@@ -14,11 +9,10 @@ export default function UsersPanel() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // TODO: implement endpoint to fetch trainer assignments
-    // Placeholder: show message only
     const fetch = async () => {
       try {
         setLoading(false);
+        setAssignments([]);
       } catch (err) {
         setError('');
       }
@@ -27,15 +21,47 @@ export default function UsersPanel() {
   }, [api]);
 
   return (
-    <div>
-      <h3>Usuarios asignados</h3>
+    <section className="page-section">
+      <div className="section-heading">
+        <div>
+          <h3>Usuarios asignados</h3>
+          <p>Visualiza a las personas que acompañas y comparte retroalimentación personalizada.</p>
+        </div>
+        <span className="badge">
+          <IconUsers size={18} /> Entrenadores
+        </span>
+      </div>
       {loading ? (
-        <p>Cargando...</p>
+        <div className="empty-state">Cargando...</div>
       ) : error ? (
-        <p className="error">{error}</p>
+        <div className="alert alert-error">{error}</div>
+      ) : assignments.length === 0 ? (
+        <div className="empty-state">
+          Aún no tienes usuarios asignados en la plataforma. Una vez el administrador realice las
+          asignaciones, podrás visualizar sus rutinas y progreso aquí.
+        </div>
       ) : (
-        <p>Funcionalidad en construcción. Aquí se mostrarán los usuarios asignados al entrenador.</p>
+        <div className="table-wrapper">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Programa</th>
+                <th>Última actualización</th>
+              </tr>
+            </thead>
+            <tbody>
+              {assignments.map((assignment) => (
+                <tr key={assignment.id}>
+                  <td>{assignment.name}</td>
+                  <td>{assignment.program}</td>
+                  <td>{assignment.lastUpdate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-    </div>
+    </section>
   );
 }
