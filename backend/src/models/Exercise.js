@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
  */
 const ExerciseSchema = new mongoose.Schema(
   {
+    id: { type: Number, required: true, unique: true },
     name: { type: String, required: true, trim: true },
     type: {
       type: String,
@@ -15,16 +16,20 @@ const ExerciseSchema = new mongoose.Schema(
       required: true,
     },
     description: { type: String, default: '' },
-    duration: { type: Number, required: true, min: 1 }, // Duration in minutes
+    duration: { type: Number, min: 0 },
     difficulty: {
-      type: String,
-      enum: ['principiante', 'intermedio', 'avanzado'],
+      type: Number,
+      enum: [1, 2, 3],
       required: true,
     },
-    videos: [{ type: String, default: [] }],
-    createdBy: { type: Number, required: true }, // references user_id from relational DB
+    videos: { type: [String], default: [] },
+    createdBy: { type: Number, required: true },
   },
-  { timestamps: true }
+  {
+    _id: false,
+    versionKey: false,
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+  }
 );
 
 module.exports = mongoose.model('Exercise', ExerciseSchema);
