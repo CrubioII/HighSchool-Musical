@@ -3,6 +3,30 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useApi } from '../api.js';
 import { IconEdit, IconPlus, IconRefresh, IconTrash } from '../components/icons.jsx';
 
+const difficultyOptions = [
+  { value: 1, label: 'Principiante' },
+  { value: 2, label: 'Intermedio' },
+  { value: 3, label: 'Avanzado' },
+];
+
+const getDifficultyLabel = (value) => {
+  const option = difficultyOptions.find((opt) => opt.value === value);
+  return option ? option.label : '—';
+};
+
+const formatDate = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
 export default function ExercisesPage() {
   const api = useApi();
   const { role } = useAuth();
@@ -14,9 +38,8 @@ export default function ExercisesPage() {
     name: '',
     type: 'cardio',
     description: '',
-    duration: 30,
-    difficulty: 'principiante',
-    videos: '',
+    duration: '',
+    difficulty: 1,
   });
   const [isEditing, setIsEditing] = useState(false);
 
@@ -43,16 +66,23 @@ export default function ExercisesPage() {
       name: '',
       type: 'cardio',
       description: '',
-      duration: 30,
-      difficulty: 'principiante',
-      videos: '',
+      duration: '',
+      difficulty: 1,
     });
     setIsEditing(false);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      if (name === 'difficulty') {
+        return { ...prev, [name]: Number(value) };
+      }
+      if (name === 'duration') {
+        return { ...prev, [name]: value };
+      }
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -62,13 +92,16 @@ export default function ExercisesPage() {
         name: form.name,
         type: form.type,
         description: form.description,
-        duration: Number(form.duration),
         difficulty: form.difficulty,
-        videos: form.videos
-          .split(',')
-          .map((v) => v.trim())
-          .filter((v) => v.length > 0),
       };
+
+      if (form.duration !== '') {
+        const parsedDuration = Number(form.duration);
+        if (!Number.isNaN(parsedDuration)) {
+          payload.duration = parsedDuration;
+        }
+      }
+
       if (isEditing && form.id) {
         await api.put(`/api/exercises/${form.id}`, payload);
       } else {
@@ -86,13 +119,12 @@ export default function ExercisesPage() {
   const handleEdit = (exercise) => {
     setIsEditing(true);
     setForm({
-      id: exercise._id,
+      id: exercise.id,
       name: exercise.name,
       type: exercise.type,
       description: exercise.description,
-      duration: exercise.duration,
+      duration: exercise.duration != null ? String(exercise.duration) : '',
       difficulty: exercise.difficulty,
-      videos: (exercise.videos || []).join(', '),
     });
   };
 
@@ -100,7 +132,7 @@ export default function ExercisesPage() {
     if (!window.confirm('¿Seguro que deseas eliminar este ejercicio?')) return;
     try {
       await api.delete(`/api/exercises/${id}`);
-      setExercises((prev) => prev.filter((e) => e._id !== id));
+      setExercises((prev) => prev.filter((e) => e.id !== id));
     } catch (err) {
       setError('Error al eliminar ejercicio');
     }
@@ -134,27 +166,25 @@ export default function ExercisesPage() {
                       <th>Tipo</th>
                       <th>Dificultad</th>
                       <th>Duración (min)</th>
-                      <th>Videos</th>
+                      <th>Creado</th>
                       {['trainer', 'admin'].includes(role) && <th>Acciones</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {exercises.map((ex) => (
-                      <tr key={ex._id}>
+                      <tr key={ex.id}>
                         <td>{ex.name}</td>
                         <td>{ex.type}</td>
-                        <td>{ex.difficulty}</td>
-                        <td>{ex.duration}</td>
-                        <td>
-                          <span className="badge">{(ex.videos || []).length} recursos</span>
-                        </td>
+                        <td>{getDifficultyLabel(ex.difficulty)}</td>
+                        <td>{typeof ex.duration === 'number' ? ex.duration : '—'}</td>
+                        <td>{formatDate(ex.created_at)}</td>
                         {['trainer', 'admin'].includes(role) && (
                           <td>
                             <div className="pill-list">
                               <button className="btn btn-secondary" type="button" onClick={() => handleEdit(ex)}>
                                 <IconEdit size={18} /> Editar
                               </button>
-                              <button className="btn btn-danger" type="button" onClick={() => handleDelete(ex._id)}>
+                              <button className="btn btn-danger" type="button" onClick={() => handleDelete(ex.id)}>
                                 <IconTrash size={18} /> Eliminar
                               </button>
                             </div>
@@ -174,9 +204,7 @@ export default function ExercisesPage() {
         <section className="page-section">
           <div className="section-heading">
             <h3>{isEditing ? 'Editar ejercicio' : 'Crear nuevo ejercicio'}</h3>
-            {!isEditing && (
-              <span className="badge">Aporta variedad a tus rutinas</span>
-            )}
+            {!isEditing && <span className="badge">Aporta variedad a tus rutinas</span>}
           </div>
           <form onSubmit={handleSubmit} className="form-grid">
             <div className="form-grid-two">
@@ -209,9 +237,11 @@ export default function ExercisesPage() {
                   value={form.difficulty}
                   onChange={handleChange}
                 >
-                  <option value="principiante">Principiante</option>
-                  <option value="intermedio">Intermedio</option>
-                  <option value="avanzado">Avanzado</option>
+                  {difficultyOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -223,7 +253,6 @@ export default function ExercisesPage() {
                   min="1"
                   value={form.duration}
                   onChange={handleChange}
-                  required
                 />
               </div>
             </div>
@@ -234,16 +263,6 @@ export default function ExercisesPage() {
                 name="description"
                 rows="3"
                 value={form.description}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="exercise-videos">Videos (URL separadas por coma)</label>
-              <input
-                id="exercise-videos"
-                name="videos"
-                type="text"
-                value={form.videos}
                 onChange={handleChange}
               />
             </div>

@@ -11,9 +11,12 @@ exports.listExercises = async (req, res) => {
       filter.type = req.query.type;
     }
     if (req.query.difficulty) {
-      filter.difficulty = req.query.difficulty;
+      const difficultyFilter = Number(req.query.difficulty);
+      if (!Number.isNaN(difficultyFilter)) {
+        filter.difficulty = difficultyFilter;
+      }
     }
-    const exercises = await Exercise.find(filter).lean();
+    const exercises = await Exercise.find(filter).sort({ id: 1 }).lean();
     res.json(exercises);
   } catch (err) {
     console.error('Error al listar ejercicios', err);
@@ -27,17 +30,46 @@ exports.listExercises = async (req, res) => {
  */
 exports.createExercise = async (req, res) => {
   try {
-    const { name, type, description, duration, difficulty, videos } = req.body;
-    const exercise = new Exercise({
+    const { name, type, description, duration, difficulty, videos, id: externalId } = req.body;
+
+    if (typeof difficulty !== 'number' || Number.isNaN(difficulty)) {
+      return res.status(400).json({ message: 'La dificultad debe ser numérica' });
+    }
+
+    const normalizedVideos = Array.isArray(videos)
+      ? videos.filter((url) => typeof url === 'string' && url.trim().length > 0)
+      : [];
+
+    const payload = {
       name,
       type,
-      description,
-      duration,
+      description: description || '',
       difficulty,
-      videos,
       createdBy: req.user.id,
-    });
-    await exercise.save();
+    };
+
+    if (duration !== undefined) {
+      const numericDuration = Number(duration);
+      if (!Number.isNaN(numericDuration)) {
+        payload.duration = numericDuration;
+      }
+    }
+    if (normalizedVideos.length > 0) {
+      payload.videos = normalizedVideos;
+    }
+
+    if (externalId !== undefined) {
+      const numericId = Number(externalId);
+      if (Number.isNaN(numericId)) {
+        return res.status(400).json({ message: 'El id proporcionado no es numérico' });
+      }
+      payload.id = numericId;
+    } else {
+      const lastExercise = await Exercise.findOne().sort({ id: -1 }).lean();
+      payload.id = lastExercise ? lastExercise.id + 1 : 1;
+    }
+
+    const exercise = await Exercise.create(payload);
     res.status(201).json(exercise);
   } catch (err) {
     console.error('Error al crear ejercicio', err);
@@ -51,9 +83,48 @@ exports.createExercise = async (req, res) => {
  */
 exports.updateExercise = async (req, res) => {
   try {
-    const { id } = req.params;
-    const update = req.body;
-    const exercise = await Exercise.findByIdAndUpdate(id, update, { new: true });
+    const exerciseId = Number(req.params.id);
+    if (Number.isNaN(exerciseId)) {
+      return res.status(400).json({ message: 'Identificador inválido' });
+    }
+
+    const allowedFields = ['name', 'type', 'description', 'difficulty', 'duration', 'videos'];
+    const update = {};
+
+    allowedFields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        update[field] = req.body[field];
+      }
+    });
+
+    if (update.difficulty !== undefined) {
+      const numericDifficulty = Number(update.difficulty);
+      if (Number.isNaN(numericDifficulty)) {
+        return res.status(400).json({ message: 'La dificultad debe ser numérica' });
+      }
+      update.difficulty = numericDifficulty;
+    }
+
+    if (update.duration !== undefined) {
+      const numericDuration = Number(update.duration);
+      if (Number.isNaN(numericDuration)) {
+        delete update.duration;
+      } else {
+        update.duration = numericDuration;
+      }
+    }
+
+    if (update.videos !== undefined) {
+      update.videos = Array.isArray(update.videos)
+        ? update.videos.filter((url) => typeof url === 'string' && url.trim().length > 0)
+        : [];
+    }
+
+    const exercise = await Exercise.findOneAndUpdate({ id: exerciseId }, update, {
+      new: true,
+      runValidators: true,
+    });
+
     if (!exercise) {
       return res.status(404).json({ message: 'Ejercicio no encontrado' });
     }
@@ -70,8 +141,12 @@ exports.updateExercise = async (req, res) => {
  */
 exports.deleteExercise = async (req, res) => {
   try {
-    const { id } = req.params;
-    const exercise = await Exercise.findByIdAndDelete(id);
+    const exerciseId = Number(req.params.id);
+    if (Number.isNaN(exerciseId)) {
+      return res.status(400).json({ message: 'Identificador inválido' });
+    }
+
+    const exercise = await Exercise.findOneAndDelete({ id: exerciseId });
     if (!exercise) {
       return res.status(404).json({ message: 'Ejercicio no encontrado' });
     }
