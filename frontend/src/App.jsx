@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/Login.jsx';
+import RegisterPage from './pages/Register.jsx';
 import DashboardPage from './pages/Dashboard.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 
@@ -18,6 +19,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route
           path="/*"
           element={
