@@ -9,16 +9,43 @@ export default function UsersPanel() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetch = async () => {
+    let isMounted = true;
+
+    const fetchAssignments = async () => {
       try {
-        setLoading(false);
-        setAssignments([]);
-      } catch (err) {
+        setLoading(true);
         setError('');
+        const response = await api.get('/api/admin/assignments');
+        if (isMounted) {
+          setAssignments(response.data || []);
+        }
+      } catch (err) {
+        console.error('Error al cargar asignaciones', err);
+        if (isMounted) {
+          const message = err.response?.data?.message || 'No se pudieron cargar las asignaciones';
+          setError(message);
+          setAssignments([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
-    fetch();
+
+    fetchAssignments();
+
+    return () => {
+      isMounted = false;
+    };
   }, [api]);
+
+  const formatDate = (value) => {
+    if (!value) return 'Sin actualizaciones';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Sin actualizaciones';
+    return date.toLocaleDateString();
+  };
 
   return (
     <section className="page-section">
@@ -55,7 +82,7 @@ export default function UsersPanel() {
                 <tr key={assignment.id}>
                   <td>{assignment.name}</td>
                   <td>{assignment.program}</td>
-                  <td>{assignment.lastUpdate}</td>
+                  <td>{formatDate(assignment.lastUpdate)}</td>
                 </tr>
               ))}
             </tbody>
