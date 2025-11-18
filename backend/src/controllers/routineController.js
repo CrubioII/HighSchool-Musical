@@ -1,5 +1,6 @@
 const Routine = require('../models/Routine');
 const Exercise = require('../models/Exercise');
+const statsService = require('../services/statsService');
 
 /**
  * List routines. Students should see their own routines; trainers and admins can
@@ -67,6 +68,9 @@ exports.createRoutine = async (req, res) => {
       createdBy: req.user.id,
     });
     await routine.save();
+    if (!routine.isPredefined) {
+      await statsService.recordRoutineCreation(routine.userId, routine.createdAt);
+    }
     res.status(201).json(routine);
   } catch (err) {
     console.error('Error al crear rutina', err);
@@ -95,6 +99,7 @@ exports.adoptRoutine = async (req, res) => {
       createdBy: req.user.id,
     });
     await copy.save();
+    await statsService.recordRoutineCreation(copy.userId, copy.createdAt);
     res.status(201).json(copy);
   } catch (err) {
     console.error('Error al adoptar rutina', err);

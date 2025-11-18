@@ -1,5 +1,6 @@
 const ProgressLog = require('../models/ProgressLog');
 const Routine = require('../models/Routine');
+const statsService = require('../services/statsService');
 
 /**
  * Create a progress log entry for a routine. Validates that the routine
@@ -29,6 +30,7 @@ exports.createProgressLog = async (req, res) => {
       comments,
     });
     await log.save();
+    await statsService.recordProgressFollowup(log.userId, log.date);
     res.status(201).json(log);
   } catch (err) {
     console.error('Error al registrar progreso', err);
