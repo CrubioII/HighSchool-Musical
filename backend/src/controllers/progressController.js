@@ -15,13 +15,15 @@ exports.createProgressLog = async (req, res) => {
     if (!routine) {
       return res.status(404).json({ message: 'Rutina no encontrada' });
     }
+    const normalizedRoutineOwnerId = Number(routine.userId);
+    const normalizedRequesterId = Number(req.user.id);
     // Only owner can log progress
-    if (routine.userId !== req.user.id) {
+    if (normalizedRoutineOwnerId !== normalizedRequesterId) {
       return res.status(403).json({ message: 'No autorizado para registrar progreso en esta rutina' });
     }
     const log = new ProgressLog({
       routineId,
-      userId: req.user.id,
+      userId: normalizedRequesterId,
       date: new Date(),
       exerciseId,
       repetitions,
