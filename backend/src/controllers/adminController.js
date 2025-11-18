@@ -1,5 +1,6 @@
 const db = require('../db/postgres');
 const Routine = require('../models/Routine');
+const statsService = require('../services/statsService');
 
 /**
  * Assign or reassign a trainer to a user. If an assignment exists, we close
@@ -21,6 +22,7 @@ exports.assignTrainer = async (req, res) => {
       `INSERT INTO gym_app.assignment (user_id, instructor_id, start_date) VALUES ($1, $2, CURRENT_DATE)`,
       [userId, instructorId]
     );
+    await statsService.recordNewAssignment(instructorId, new Date());
     res.json({ message: 'Entrenador asignado exitosamente' });
   } catch (err) {
     console.error('Error al asignar entrenador', err);

@@ -16,6 +16,7 @@ const progressRoutes = require('./routes/progressRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
+const { scheduleMonthlyAggregation } = require('./services/statsService');
 
 // Initialize express
 const app = express();
@@ -57,6 +58,7 @@ async function start() {
   app.listen(port, () => {
     console.log(`Servidor escuchando en el puerto ${port}`);
   });
+  scheduleMonthlyAggregation();
 }
 
 // Start the application
