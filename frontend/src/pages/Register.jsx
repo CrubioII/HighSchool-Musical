@@ -5,20 +5,30 @@ import { IconLock, IconUser } from '../components/icons.jsx';
 import logoBienestar from '../assets/logo-bienestar.svg';
 import logoIcesi from '../assets/logo-icesi.svg';
 
-export default function LoginPage() {
+const ROLE_OPTIONS = [
+  { value: 'student', label: 'Estudiante' },
+  { value: 'colaborador', label: 'Colaborador' },
+  { value: 'trainer', label: 'Entrenador' },
+  { value: 'admin', label: 'Administrador' },
+];
+
+export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState(ROLE_OPTIONS[0].value);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      await login(username, password);
+      await register(username, password, role);
       navigate('/');
     } catch (err) {
-      setError('Usuario o contraseña incorrectos. Intenta nuevamente.');
+      const message = err?.response?.data?.message || 'No se pudo completar el registro. Intenta nuevamente.';
+      setError(message);
     }
   };
 
@@ -28,22 +38,22 @@ export default function LoginPage() {
         <div className="hero-content">
           <div>
             <img src={logoIcesi} alt="Universidad ICESI" width={180} />
-            <h2>Llega más lejos con el bienestar universitario ICESI.</h2>
+            <h2>Únete a la comunidad de bienestar ICESI.</h2>
             <p>
-              Accede a tus rutinas personalizadas, sigue tu progreso y mantente en contacto
-              con tu equipo de bienestar y entrenadores certificados.
+              Crea tu cuenta para acceder a rutinas personalizadas, registrar tu progreso y
+              mantenerte en contacto con el equipo de bienestar.
             </p>
           </div>
           <div className="hero-card">
-            <strong>Somos comunidad saludable</strong>
+            <strong>Experiencias a tu medida</strong>
             <p>
-              Participa en actividades deportivas, culturales y de salud integral pensadas para
-              potenciar tu experiencia universitaria.
+              Selecciona tu rol para recibir contenidos y acompañamiento de acuerdo con tus
+              necesidades dentro de la universidad.
             </p>
             <div className="pill-list">
-              <span className="pill">Deporte</span>
-              <span className="pill">Hábitos saludables</span>
+              <span className="pill">Bienestar</span>
               <span className="pill">Acompañamiento</span>
+              <span className="pill">Comunidad</span>
             </div>
           </div>
         </div>
@@ -53,8 +63,8 @@ export default function LoginPage() {
         <div className="login-panel-inner">
           <header>
             <img src={logoBienestar} alt="ICESI Bienestar" width={160} />
-            <h1>Portal Bienestar ICESI</h1>
-            <p>Inicia sesión con tu usuario institucional</p>
+            <h1>Crear cuenta</h1>
+            <p>Completa la información para registrarte en el portal.</p>
           </header>
 
           {error && <div className="error-message">{error}</div>}
@@ -85,29 +95,42 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type="password"
-                  placeholder="Tu contraseña segura"
+                  placeholder="Crea una contraseña segura"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
             </div>
+            <div>
+              <label className="label-text" htmlFor="role">
+                Rol en el portal
+              </label>
+              <div className="input-field">
+                <IconUser size={20} />
+                <select
+                  id="role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                >
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <button className="primary-btn" type="submit">
-              Ingresar
+              Registrarme
             </button>
           </form>
 
           <div className="form-footer">
-            <p>¿Olvidaste tu contraseña? Comunícate con la mesa de servicio ICESI.</p>
+            <p>¿Ya tienes cuenta? Ingresa con tus credenciales.</p>
             <p>
-              <a href="mailto:soporte@icesi.edu.co">soporte@icesi.edu.co</a> · (602) 555 1234
-            </p>
-            <p>
-              ¿Nuevo en el portal?{' '}
-              <Link className="link" to="/register">
-                Regístrate aquí
-              </Link>
-              .
+              <Link to="/login">Ir al login</Link>
             </p>
           </div>
         </div>

@@ -29,6 +29,17 @@ export function AuthProvider({ children }) {
     localStorage.setItem('role', userRole);
   };
 
+  const register = async (username, password, roleName) => {
+    const response = await axios.post('/api/auth/register', { username, password, role: roleName });
+    const { token: jwt } = response.data;
+    const payload = JSON.parse(atob(jwt.split('.')[1]));
+    const userRole = payload.role;
+    setToken(jwt);
+    setRole(userRole);
+    localStorage.setItem('jwt', jwt);
+    localStorage.setItem('role', userRole);
+  };
+
   const logout = () => {
     setToken(null);
     setRole(null);
@@ -37,7 +48,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, role, login, logout }}>
+    <AuthContext.Provider value={{ token, role, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
